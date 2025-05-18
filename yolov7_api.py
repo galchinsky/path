@@ -1,23 +1,42 @@
-# yolov7_api.py
 import sys
-sys.path.append('/home/dmitry/yolov7')
+sys.path.append('yolov7')
+
 import torch
 from torch.serialization import add_safe_globals
-from models.experimental import attempt_load
-from utils.general import non_max_suppression, scale_coords
-from utils.datasets import letterbox
-from utils.torch_utils import select_device
+from yolov7.models.experimental import attempt_load
+from yolov7.utils.general import non_max_suppression, scale_coords
+from yolov7.utils.datasets import letterbox
+from yolov7.utils.torch_utils import select_device
 import numpy as np
 import cv2
+
+# allow globals to overcome safe loading
+from models.common import Concat
+from models.common import Conv
+from models.common import MP
+from models.common import SP
+from models.yolo import Detect
+from models.yolo import Model
+from torch.nn.modules.activation import LeakyReLU
+from torch.nn.modules.batchnorm import BatchNorm2d
+from torch.nn.modules.container import ModuleList
+from torch.nn.modules.container import Sequential
+from torch.nn.modules.conv import Conv2d
+from torch.nn.modules.pooling import MaxPool2d
+from torch.nn.modules.upsampling import Upsample
+
+safe_globals = [Concat, Conv, MP, SP,
+Detect, Model, LeakyReLU, BatchNorm2d,
+ModuleList, Sequential, Conv2d,
+MaxPool2d, Upsample]
 
 class YOLOv7Wrapper:
     def __init__(self, weights='yolov7-tiny.pt', img_size=640, conf_thres=0.25, iou_thres=0.45, device=''):
         self.device = select_device(device)
 
-        from models.yolo import Model
-        from torch.nn import Sequential
-        add_safe_globals([Model, Sequential])
-        self.model = attempt_load(weights, map_location=self.device)
+        with torch.serialization.safe_globals(safe_globals):
+            self.model = attempt_load(weights, map_location=self.device)
+
         self.model.eval()
         self.img_size = img_size
         self.conf_thres = conf_thres
