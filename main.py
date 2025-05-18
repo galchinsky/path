@@ -97,15 +97,20 @@ def visualize_frame(frame, bboxes, bottom_points, cell_mappings, H_inv):
 
 
 if __name__ == "__main__":
-    video_path = "2025-05-06 04-40-15.mkv"
-    cap = cv2.VideoCapture(video_path)
+    # Use camera instead of video file
+    camera_id = 0  # Usually 0 is the default camera
+    cap = cv2.VideoCapture(camera_id)
     if not cap.isOpened():
-        print(f"Error: cannot open {video_path}")
+        print(f"Error: cannot open camera {camera_id}")
         exit(1)
+
+    # Set camera properties if needed
+    # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+    # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
     ret, initial_frame = cap.read()
     if not ret:
-        print("Error: failed to read first frame.")
+        print("Error: failed to read first frame from camera.")
         exit(1)
 
     corner_pts = ask_user_for_4_points(initial_frame)
@@ -120,11 +125,8 @@ if __name__ == "__main__":
         while True:
             ret, frame = cap.read()
             if not ret:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-                ret, frame = cap.read()
-                if not ret:
-                    print("Error: failed to loop video.")
-                    break
+                print("Error: failed to read frame from camera.")
+                break
 
             t1 = time.time()
             bboxes = yolo.infer(frame)
